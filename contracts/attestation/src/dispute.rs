@@ -1077,4 +1077,59 @@ mod test {
             Some(attestor2)
         );
     }
+
+    #[test]
+    fn test_get_anomaly_escalation_empty() {
+        let env = Env::default();
+        let business = Address::generate(&env);
+        
+        assert_eq!(get_anomaly_escalation(&env, &business), None);
+    }
+
+    #[test]
+    fn test_get_anomaly_escalation_after_update() {
+        let env = Env::default();
+        let business = Address::generate(&env);
+        
+        // score < 50 => no escalation (returns None because it's not set)
+        update_anomaly_escalation(&env, &business, 40);
+        assert_eq!(get_anomaly_escalation(&env, &business), None);
+
+        // score 50..=74 => level 1
+        update_anomaly_escalation(&env, &business, 50);
+        assert_eq!(get_anomaly_escalation(&env, &business), Some(1));
+
+        // score 75..=89 => level 2
+        update_anomaly_escalation(&env, &business, 75);
+        assert_eq!(get_anomaly_escalation(&env, &business), Some(2));
+
+        // score >= 90 => level 3
+        update_anomaly_escalation(&env, &business, 95);
+        assert_eq!(get_anomaly_escalation(&env, &business), Some(3));
+    }
+
+    #[test]
+    fn test_get_anomaly_escalation_monotonic() {
+        let env = Env::default();
+        let business = Address::generate(&env);
+        
+        // escalation level only increases
+        update_anomaly_escalation(&env, &business, 90); // level 3
+        assert_eq!(get_anomaly_escalation(&env, &business), Some(3));
+        
+        update_anomaly_escalation(&env, &business, 50); // level 1, but should stay 3
+        assert_eq!(get_anomaly_escalation(&env, &business), Some(3));
+    }
+
+    #[test]
+    fn test_get_anomaly_escalation_after_clear() {
+        let env = Env::default();
+        let business = Address::generate(&env);
+        
+        update_anomaly_escalation(&env, &business, 80); // level 2
+        assert_eq!(get_anomaly_escalation(&env, &business), Some(2));
+
+        clear_anomaly_escalation(&env, &business);
+        assert_eq!(get_anomaly_escalation(&env, &business), None);
+    }
 }
