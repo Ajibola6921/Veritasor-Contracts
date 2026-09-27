@@ -493,22 +493,8 @@ fn test_business_role_limits() {
 #[test]
 fn test_fuzz_grant_revoke_role_random_bitmaps() {
     let e = soroban_sdk::Env::default();
-    let user1 = soroban_sdk::Address::generate(&e);
-    // A second admin keeps `admin_count > MIN_ADMIN_COUNT` so the
-    // admin-removal safeguard in `revoke_role` does not trip while the
-    // bitmap arithmetic below is exercised.
-    let user2 = soroban_sdk::Address::generate(&e);
-    e.as_contract(&contract_id, || {
-        crate::access_control::set_roles(&e, &user2, ROLE_ADMIN);
-
-    // Seed enough admins that revoking ROLE_ADMIN from user1 keeps the
-    // admin count above MIN_ADMIN_COUNT (and the cooldown guard idle).
-    let admin1 = soroban_sdk::Address::generate(&e);
-    let admin2 = soroban_sdk::Address::generate(&e);
-    let admin3 = soroban_sdk::Address::generate(&e);
-    access_control::grant_role(&e, &admin1, ROLE_ADMIN, &admin1);
-    access_control::grant_role(&e, &admin2, ROLE_ADMIN, &admin1);
-    access_control::grant_role(&e, &admin3, ROLE_ADMIN, &admin1);
+    e.mock_all_auths();
+    let contract_id = e.register(AttestationContract, ());
 
     let valid_roles = [
         0b0000, 0b0001, 0b0010, 0b0100, 0b1000, 0b0011, 0b0101, 0b1001, 0b0110, 0b1010, 0b1100,
@@ -517,58 +503,61 @@ fn test_fuzz_grant_revoke_role_random_bitmaps() {
     let invalid_bitmaps = [0b10000u32, 0b100000u32, 0xFFFFu32, 0xDEADu32, 0xFFFFFFFFu32];
 
     let user1 = soroban_sdk::Address::generate(&e);
+    // A second admin keeps `admin_count > MIN_ADMIN_COUNT` so the
+    // admin-removal safeguard in `revoke_role` does not trip while the
+    // bitmap arithmetic below is exercised.
+    let user2 = soroban_sdk::Address::generate(&e);
+    e.as_contract(&contract_id, || {
+        crate::access_control::set_roles(&e, &user2, ROLE_ADMIN);
 
-    for &roles in valid_roles.iter() {
-        access_control::set_roles(&e, &user1, 0u32);
-        if roles == 0 {
-            // `grant_role` rejects the zero bitmap; `set_roles` accepts it.
-            assert_eq!(access_control::get_roles(&e, &user1), 0u32);
-            continue;
+        for &roles in valid_roles.iter() {
+            crate::access_control::set_roles(&e, &user1, 0u32);
+            // 0b0000 is a valid bitmap but a no-op grant; set_roles covers it.
+            if roles != 0 {
+                crate::access_control::grant_role(&e, &user1, roles, &user1);
+            }
+            assert_eq!(
+                crate::access_control::get_roles(&e, &user1),
+                roles,
+                "set/grant failed for bitmap {}",
+                roles
+            );
         }
-        access_control::grant_role(&e, &user1, roles, &admin1);
-        assert_eq!(
-            access_control::get_roles(&e, &user1),
-            roles,
-            "grant_role failed for bitmap {}",
-            roles
-        );
-    }
 
-    // Granting an already-held role is idempotent.
-    access_control::set_roles(&e, &user1, 0u32);
-    access_control::grant_role(&e, &user1, 0b0101u32, &admin1);
-    access_control::grant_role(&e, &user1, 0b0101u32, &admin1);
-    assert_eq!(access_control::get_roles(&e, &user1), 0b0101u32);
+        crate::access_control::set_roles(&e, &user1, 0u32);
+        crate::access_control::grant_role(&e, &user1, 0b0101u32, &user1);
+        crate::access_control::grant_role(&e, &user1, 0b0101u32, &user1);
+        assert_eq!(crate::access_control::get_roles(&e, &user1), 0b0101u32);
 
-    access_control::set_roles(&e, &user1, 0b1111u32);
-    access_control::revoke_role(&e, &user1, 0b0001u32, &admin1);
-    assert_eq!(access_control::get_roles(&e, &user1), 0b1110u32);
-    access_control::revoke_role(&e, &user1, 0b0010u32, &admin1);
-    assert_eq!(access_control::get_roles(&e, &user1), 0b1100u32);
-    access_control::revoke_role(&e, &user1, 0b0100u32, &admin1);
-    assert_eq!(access_control::get_roles(&e, &user1), 0b1000u32);
-    access_control::revoke_role(&e, &user1, 0b1000u32, &admin1);
-    assert_eq!(access_control::get_roles(&e, &user1), 0u32);
+        crate::access_control::set_roles(&e, &user1, 0b1111u32);
+        crate::access_control::revoke_role(&e, &user1, 0b0001u32, &user1);
+        assert_eq!(crate::access_control::get_roles(&e, &user1), 0b1110u32);
+        crate::access_control::revoke_role(&e, &user1, 0b0010u32, &user1);
+        assert_eq!(crate::access_control::get_roles(&e, &user1), 0b1100u32);
+        crate::access_control::revoke_role(&e, &user1, 0b0100u32, &user1);
+        assert_eq!(crate::access_control::get_roles(&e, &user1), 0b1000u32);
+        crate::access_control::revoke_role(&e, &user1, 0b1000u32, &user1);
+        assert_eq!(crate::access_control::get_roles(&e, &user1), 0u32);
 
-    // Revoking a role that is not held is a no-op.
-    access_control::revoke_role(&e, &user1, 0b0010u32, &admin1);
-    assert_eq!(access_control::get_roles(&e, &user1), 0u32);
+        crate::access_control::revoke_role(&e, &user1, 0b0010u32, &user1);
+        assert_eq!(crate::access_control::get_roles(&e, &user1), 0u32);
 
-    for &invalid in invalid_bitmaps.iter() {
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            access_control::grant_role(&e, &user1, invalid, &admin1);
-        }));
-        assert!(
-            result.is_err(),
-            "grant_role should panic for invalid bitmap: {}",
-            invalid
-        );
-    }
+        for &invalid in invalid_bitmaps.iter() {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                crate::access_control::grant_role(&e, &user1, invalid, &user1);
+            }));
+            assert!(
+                result.is_err(),
+                "grant_role should panic for invalid bitmap: {}",
+                invalid
+            );
+        }
+    });
 
-    assert!(access_control::is_valid_role_bitmap(0b0000u32));
-    assert!(access_control::is_valid_role_bitmap(0b1111u32));
-    assert!(!access_control::is_valid_role_bitmap(0b10000u32));
-    assert!(!access_control::is_valid_role_bitmap(0xFFFFFFFFu32));
+    assert!(crate::access_control::is_valid_role_bitmap(0b0000u32));
+    assert!(crate::access_control::is_valid_role_bitmap(0b1111u32));
+    assert!(!crate::access_control::is_valid_role_bitmap(0b10000u32));
+    assert!(!crate::access_control::is_valid_role_bitmap(0xFFFFFFFFu32));
 }
 
 // ════════════════════════════════════════════════════════════════════
