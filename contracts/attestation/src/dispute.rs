@@ -1132,4 +1132,75 @@ mod test {
         clear_anomaly_escalation(&env, &business);
         assert_eq!(get_anomaly_escalation(&env, &business), None);
     }
+
+    #[test]
+    fn test_is_attestation_revoked_false_initially() {
+        let env = Env::default();
+        let business = Address::generate(&env);
+        let period = String::from_str(&env, "2026-03");
+
+        assert_eq!(is_attestation_revoked(&env, &business, &period), false);
+    }
+
+    #[test]
+    fn test_is_attestation_revoked_true_when_revoked() {
+        let env = Env::default();
+        let business = Address::generate(&env);
+        let period = String::from_str(&env, "2026-03");
+        let revoker = Address::generate(&env);
+        let reason = String::from_str(&env, "fraud");
+        let revocation: crate::RevocationData = (revoker, 1000, reason);
+
+        store_attestation_revocation(&env, &business, &period, &revocation);
+
+        assert_eq!(is_attestation_revoked(&env, &business, &period), true);
+    }
+
+    #[test]
+    fn test_is_attestation_revoked_different_period() {
+        let env = Env::default();
+        let business = Address::generate(&env);
+        let period1 = String::from_str(&env, "2026-03");
+        let period2 = String::from_str(&env, "2026-04");
+        let revoker = Address::generate(&env);
+        let reason = String::from_str(&env, "fraud");
+        let revocation: crate::RevocationData = (revoker, 1000, reason);
+
+        store_attestation_revocation(&env, &business, &period1, &revocation);
+
+        assert_eq!(is_attestation_revoked(&env, &business, &period1), true);
+        assert_eq!(is_attestation_revoked(&env, &business, &period2), false);
+    }
+
+    #[test]
+    fn test_is_attestation_revoked_different_business() {
+        let env = Env::default();
+        let business1 = Address::generate(&env);
+        let business2 = Address::generate(&env);
+        let period = String::from_str(&env, "2026-03");
+        let revoker = Address::generate(&env);
+        let reason = String::from_str(&env, "fraud");
+        let revocation: crate::RevocationData = (revoker, 1000, reason);
+
+        store_attestation_revocation(&env, &business1, &period, &revocation);
+
+        assert_eq!(is_attestation_revoked(&env, &business1, &period), true);
+        assert_eq!(is_attestation_revoked(&env, &business2, &period), false);
+    }
+
+    #[test]
+    fn test_is_attestation_revoked_empty_period() {
+        let env = Env::default();
+        let business = Address::generate(&env);
+        let period = String::from_str(&env, "");
+
+        assert_eq!(is_attestation_revoked(&env, &business, &period), false);
+
+        let revoker = Address::generate(&env);
+        let reason = String::from_str(&env, "fraud");
+        let revocation: crate::RevocationData = (revoker, 1000, reason);
+        store_attestation_revocation(&env, &business, &period, &revocation);
+
+        assert_eq!(is_attestation_revoked(&env, &business, &period), true);
+    }
 }
