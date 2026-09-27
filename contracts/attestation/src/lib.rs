@@ -8,8 +8,8 @@ extern crate std;
 
 use core::cmp::Ordering;
 use soroban_sdk::{
-    contract, contractimpl, contracttype, signature, token, Address, BytesN, Env, Signature,
-    String, Symbol, TryIntoVal, Vec,
+    contract, contractimpl, contracttype, token, Address, BytesN, Env, IntoVal, String, Symbol,
+    TryIntoVal, Vec,
 };
 
 use veritasor_common::merkle;
@@ -53,7 +53,10 @@ fn current_budget_costs(env: &Env) -> (u64, u64) {
     (budget.cpu_instruction_cost(), budget.memory_bytes_cost())
 }
 
-
+#[cfg(not(any(test, feature = "testutils")))]
+fn current_budget_costs(_env: &Env) -> (u64, u64) {
+    (0, 0)
+}
 
 // Status constants
 pub const STATUS_ACTIVE: u32 = 0;
@@ -89,7 +92,10 @@ pub use access_control::{ROLE_ADMIN, ROLE_ATTESTOR, ROLE_BUSINESS, ROLE_OPERATOR
 pub use dispute::{
     Dispute, DisputeOutcome, DisputeResolution, DisputeStatus, DisputeType, OptionalResolution,
 };
-pub use dynamic_fees::{add_relayer_gas, compute_fee, get_relayer_gas, DataKey, FeeConfig};
+pub use dynamic_fees::{
+    add_relayer_gas, compute_fee, get_relayer_gas, DataKey, FeeConfig, PendingFeeConfig,
+    FEE_TIMELOCK_SECONDS,
+};
 pub use dynamic_fees::{ArchivePointerRecord, CompactionRetentionPolicy};
 pub use dynamic_fees::{RevokeProposal, DEFAULT_REVOKE_GRACE_SECONDS};
 pub use events::{
@@ -215,7 +221,6 @@ fn budget_cpu(env: &Env) -> u64 {
     env.cost_estimate().budget().cpu_instruction_cost()
 }
 
-
 /// Read the current memory bytes for relayer gas metering.
 ///
 /// See [`budget_cpu`] for the testutils-gating rationale.
@@ -223,7 +228,6 @@ fn budget_cpu(env: &Env) -> u64 {
 fn budget_mem(env: &Env) -> u64 {
     env.cost_estimate().budget().memory_bytes_cost()
 }
-
 
 #[soroban_sdk::contractclient(name = "AttestorStakingClient")]
 pub trait AttestorStakingContractTrait {
@@ -1797,10 +1801,7 @@ impl AttestationContract {
     }
 
     /// Cleanup orphaned revocation index entries for a business.
-    pub fn cleanup_revocation_index(
-        env: Env,
-        business: Address,
-    ) -> Result<u32, soroban_sdk::Error> {
+    pub fn cleanup_revocation_index(env: Env, business: Address) -> u32 {
         let mut periods = dispute::get_revoked_periods(&env, &business);
         if periods.is_empty() {
             return 0;
@@ -1852,6 +1853,7 @@ impl AttestationContract {
     ) -> AttestationStatusResult {
         let mut result = Vec::new(&env);
         for period in periods.iter() {
+            let mut found = false;
             // Active tier lives in instance storage (see `execute_submission`).
             let active_key = DataKey::Attestation(business.clone(), period.clone());
             if let Some(att_data) = env
@@ -1867,7 +1869,7 @@ impl AttestationContract {
                 );
                 result.push_back((
                     period.clone(),
-                    att_data.clone(),
+                    Some(att_data.clone()),
                     Self::get_revocation_info(env.clone(), business.clone(), period.clone()),
                 ));
                 found = true;
@@ -1902,7 +1904,7 @@ impl AttestationContract {
 
                     result.push_back((
                         period.clone(),
-                        archived_att_data,
+                        Some(archived_att_data),
                         Self::get_revocation_info(env.clone(), business.clone(), period.clone()),
                     ));
                 }
@@ -2137,12 +2139,12 @@ impl AttestationContract {
     pub fn emergency_pause(
         env: Env,
         caller: Address,
-        sig1: Signature,
-        sig2: Signature,
+        signer1: Address,
+        signer2: Address,
         nonce: u64,
     ) {
-        let admin = access_control::require_admin(&env, &caller);
-        replay_protection::verify_and_increment_nonce(&env, &admin, NONCE_CHANNEL_ADMIN, nonce);
+        access_control::require_admin(&env, &caller);
+        replay_protection::verify_and_increment_nonce(&env, &caller, NONCE_CHANNEL_ADMIN, nonce);
         multisig::emergency_pause(&env, &signer1, &signer2);
     }
 

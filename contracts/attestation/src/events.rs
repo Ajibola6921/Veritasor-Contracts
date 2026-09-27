@@ -181,6 +181,38 @@ pub const TOPIC_ARCHIVAL_COMPACTED: Symbol = symbol_short!("arc_cmp");
 pub const TOPIC_REPUTATION_GATE_CHECK: Symbol = symbol_short!("rep_gat");
 /// Topic: a slashing condition was triggered against an attestor
 pub const TOPIC_SLASH_TRIGGERED: Symbol = symbol_short!("sl_trg");
+/// Topic: an admin proposed rebinding the attestor-staking contract
+pub const TOPIC_STAKING_CONTRACT_PROPOSED: Symbol = symbol_short!("stk_prop");
+/// Topic: a proposed staking-contract rebinding was committed
+pub const TOPIC_STAKING_CONTRACT_COMMITTED: Symbol = symbol_short!("stk_comm");
+/// Topic: a proposed staking-contract rebinding was cancelled
+pub const TOPIC_STAKING_CONTRACT_CANCELLED: Symbol = symbol_short!("stk_canc");
+/// Topic: a permit was cancelled
+pub const TOPIC_PERMIT_CANCELLED: Symbol = symbol_short!("perm_canc");
+/// Topic: relayer gas usage was reported
+pub const TOPIC_RELAYER_GAS_REPORTED: Symbol = symbol_short!("rl_gas");
+/// Topic: an emergency pause was scheduled
+pub const TOPIC_PAUSE_SCHEDULED: Symbol = symbol_short!("p_sch");
+/// Topic: a scheduled emergency pause was cancelled
+pub const TOPIC_PAUSE_SCHEDULED_CANCELLED: Symbol = symbol_short!("p_canc");
+/// Topic: expired proposals were cleaned up
+pub const TOPIC_PROPOSAL_CLEANED: Symbol = symbol_short!("prop_cln");
+/// Topic: a dispute resolution was rolled back
+pub const TOPIC_DISPUTE_ROLLED_BACK: Symbol = symbol_short!("dsp_rb");
+/// Topic: a DAO collector rotation was proposed
+pub const TOPIC_DAO_ROTATION_PROPOSED: Symbol = symbol_short!("dao_prop");
+/// Topic: a DAO collector rotation was accepted
+pub const TOPIC_DAO_ROTATION_ACCEPTED: Symbol = symbol_short!("dao_acc");
+/// Topic: an admin vote weight changed
+pub const TOPIC_ADMIN_WEIGHT_CHANGED: Symbol = symbol_short!("adm_wgt");
+/// Topic: an attestor was locked because of a dispute
+pub const TOPIC_ATTESTOR_LOCKED_FOR_DISPUTE: Symbol = symbol_short!("att_lck");
+/// Topic: a vote-weight snapshot was created
+pub const TOPIC_VOTE_WEIGHT_SNAPSHOT_CREATED: Symbol = symbol_short!("vw_snap");
+/// Topic: the owner acknowledged the recovery phrase
+pub const TOPIC_OWNER_RECOVERY_PHRASE_ACKNOWLEDGED: Symbol = symbol_short!("rpy_ack");
+/// Topic: the revocation index was cleaned up
+pub const TOPIC_REVOCATION_INDEX_CLEANED: Symbol = symbol_short!("rv_cln");
 
 // ════════════════════════════════════════════════════════════════════
 //  Normalized Event Data Structures
@@ -1213,7 +1245,13 @@ pub fn emit_permit_cancelled(env: &Env, business: &Address, nonce: u64, permit_e
 }
 
 /// Emit a `SlashTriggered` event.
-pub fn emit_slash_triggered(env: &Env, attestor: &Address, amount: i128, dispute_id: u64) {
+pub fn emit_slash_triggered(
+    env: &Env,
+    condition: SlashingCondition,
+    attestor: &Address,
+    amount: i128,
+    dispute_id: u64,
+) {
     let event = SlashTriggeredEvent {
         attestor: attestor.clone(),
         amount,
@@ -2375,7 +2413,7 @@ pub fn emit_rehydrated_from_archive(
         business.clone(),
         period.clone(),
     );
-    env.events().publish(topics, source_epoch);
+    env.events().publish(topics, total_fee);
 }
 
 /// Emit a `ReputationGateCheck` event.
@@ -2423,13 +2461,7 @@ pub fn emit_reputation_gate_check(
 
 // ── Analytics rotation ─────────────────────────────────────────────
 
-
-
 // ── Flat fee collector rotation ────────────────────────────────────
-
-
-
-
 
 /// Emit a `CollectorRotationProposed` event.
 ///
@@ -2473,10 +2505,6 @@ pub fn emit_collector_rotation_accepted(
 
 // ── DAO controller rotation ────────────────────────────────────────
 
-
-
-
-
 /// Emit a `DaoRotationProposed` event.
 ///
 /// Publishes `(dao_prp,)` → `DaoRotationProposedEvent`.
@@ -2500,12 +2528,6 @@ pub fn emit_dao_rotation_accepted(env: &Env, old_dao: &Address, new_dao: &Addres
 }
 
 // ── Staking contract time-locked rebinding ─────────────────────────
-
-
-
-
-
-
 
 /// Emit a `StakingContractProposed` event.
 ///
@@ -2551,8 +2573,6 @@ pub fn emit_staking_contract_cancelled(env: &Env, new_contract: &Address, cancel
 
 // ── Access control / governance ────────────────────────────────────
 
-
-
 /// Emit an `AdminWeightChanged` event.
 ///
 /// Publishes `(adm_wt, account)` → `AdminWeightChangedEvent`.
@@ -2566,7 +2586,7 @@ pub fn emit_admin_weight_changed(
     let event = AdminWeightChangedEvent {
         account: account.clone(),
         old_weight,
-        new_weight,
+        weight: new_weight,
         changed_by: changed_by.clone(),
     };
     env.events()
@@ -2574,8 +2594,6 @@ pub fn emit_admin_weight_changed(
 }
 
 // ── Multisig governance ────────────────────────────────────────────
-
-
 
 /// Emit an `OwnerRecoveryPhraseAcknowledged` event.
 ///
@@ -2589,8 +2607,6 @@ pub fn emit_owner_recovery_phrase_acknowledged(env: &Env, owner: &Address) {
         event,
     );
 }
-
-
 
 /// Emit a `VoteWeightSnapshotCreated` event.
 ///
@@ -2632,8 +2648,6 @@ pub fn emit_proposal_cleaned(
 }
 
 // ── Disputes ───────────────────────────────────────────────────────
-
-
 
 /// Emit an `AttestorLockedForDispute` event.
 ///
