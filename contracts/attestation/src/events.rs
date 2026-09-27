@@ -2423,45 +2423,13 @@ pub fn emit_reputation_gate_check(
 
 // ── Analytics rotation ─────────────────────────────────────────────
 
-/// Normalized payload for `AnalyticsRotationCompleted` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct AnalyticsRotationCompletedEvent {
-    /// Address being rotated out of the certified analytics set.
-    pub old_analytics: Address,
-    /// Address being rotated into the certified analytics set.
-    pub new_analytics: Address,
-}
+
 
 // ── Flat fee collector rotation ────────────────────────────────────
 
-/// Normalized payload for `CollectorRotationProposed` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct CollectorRotationProposedEvent {
-    /// Current collector proposing the rotation.
-    pub old_collector: Address,
-    /// Proposed new collector.
-    pub new_collector: Address,
-    /// Token contract used for the flat fee.
-    pub token: Address,
-    /// Amount of token escrowed at proposal time.
-    pub escrowed_amount: i128,
-}
 
-/// Normalized payload for `CollectorRotationAccepted` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct CollectorRotationAcceptedEvent {
-    /// Current collector proposing the rotation.
-    pub old_collector: Address,
-    /// Proposed new collector.
-    pub new_collector: Address,
-    /// Token contract used for the flat fee.
-    pub token: Address,
-    /// Amount of token escrowed at proposal time.
-    pub escrowed_amount: i128,
-}
+
+
 
 /// Emit a `CollectorRotationProposed` event.
 ///
@@ -2505,25 +2473,9 @@ pub fn emit_collector_rotation_accepted(
 
 // ── DAO controller rotation ────────────────────────────────────────
 
-/// Normalized payload for `DaoRotationProposed` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct DaoRotationProposedEvent {
-    /// DAO address being rotated out.
-    pub old_dao: Address,
-    /// Proposed new DAO address.
-    pub new_dao: Address,
-}
 
-/// Normalized payload for `DaoRotationAccepted` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct DaoRotationAcceptedEvent {
-    /// DAO address being rotated out.
-    pub old_dao: Address,
-    /// Proposed new DAO address.
-    pub new_dao: Address,
-}
+
+
 
 /// Emit a `DaoRotationProposed` event.
 ///
@@ -2549,37 +2501,11 @@ pub fn emit_dao_rotation_accepted(env: &Env, old_dao: &Address, new_dao: &Addres
 
 // ── Staking contract time-locked rebinding ─────────────────────────
 
-/// Normalized payload for `StakingContractProposed` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct StakingContractProposedEvent {
-    /// Proposed staking contract address.
-    pub new_contract: Address,
-    /// Admin that proposed the rebinding.
-    pub proposed_by: Address,
-    /// Timestamp after which the rebinding may be committed.
-    pub effective_at: u64,
-}
 
-/// Normalized payload for `StakingContractCommitted` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct StakingContractCommittedEvent {
-    /// Staking contract address now in effect.
-    pub new_contract: Address,
-    /// Admin that committed the rebinding.
-    pub committed_by: Address,
-}
 
-/// Normalized payload for `StakingContractCancelled` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct StakingContractCancelledEvent {
-    /// Staking contract address that was proposed (now discarded).
-    pub cancelled_contract: Address,
-    /// Admin that cancelled the rebinding.
-    pub cancelled_by: Address,
-}
+
+
+
 
 /// Emit a `StakingContractProposed` event.
 ///
@@ -2625,19 +2551,7 @@ pub fn emit_staking_contract_cancelled(env: &Env, new_contract: &Address, cancel
 
 // ── Access control / governance ────────────────────────────────────
 
-/// Normalized payload for `AdminWeightChanged` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct AdminWeightChangedEvent {
-    /// Admin account whose voting weight changed.
-    pub account: Address,
-    /// Previous voting weight.
-    pub old_weight: u32,
-    /// New voting weight.
-    pub new_weight: u32,
-    /// Address that performed the change.
-    pub changed_by: Address,
-}
+
 
 /// Emit an `AdminWeightChanged` event.
 ///
@@ -2661,13 +2575,7 @@ pub fn emit_admin_weight_changed(
 
 // ── Multisig governance ────────────────────────────────────────────
 
-/// Normalized payload for `OwnerRecoveryPhraseAcknowledged` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct OwnerRecoveryPhraseAcknowledgedEvent {
-    /// New owner that acknowledged recovery-phrase custody.
-    pub new_owner: Address,
-}
+
 
 /// Emit an `OwnerRecoveryPhraseAcknowledged` event.
 ///
@@ -2682,21 +2590,7 @@ pub fn emit_owner_recovery_phrase_acknowledged(env: &Env, owner: &Address) {
     );
 }
 
-/// Normalized payload for `VoteWeightSnapshotCreated` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct VoteWeightSnapshotCreatedEvent {
-    /// Proposal identifier the snapshot was captured for.
-    pub proposal_id: u64,
-    /// Number of owners captured in the snapshot.
-    pub owners_count: u32,
-    /// Approval threshold captured in the snapshot.
-    pub threshold: u32,
-    /// Ledger sequence at creation time.
-    pub created_at: u32,
-    /// Numeric tag of the proposal action variant.
-    pub action_tag: u32,
-}
+
 
 /// Emit a `VoteWeightSnapshotCreated` event.
 ///
@@ -2739,19 +2633,7 @@ pub fn emit_proposal_cleaned(
 
 // ── Disputes ───────────────────────────────────────────────────────
 
-/// Normalized payload for `AttestorLockedForDispute` events.
-#[contracttype]
-#[derive(Clone, Debug)]
-pub struct AttestorLockedForDisputeEvent {
-    /// Attestor locked by the dispute.
-    pub attestor: Address,
-    /// Business of the disputed attestation.
-    pub business: Address,
-    /// Period of the disputed attestation.
-    pub period: String,
-    /// Identifier of the dispute that locked the attestor.
-    pub dispute_id: u64,
-}
+
 
 /// Emit an `AttestorLockedForDispute` event.
 ///

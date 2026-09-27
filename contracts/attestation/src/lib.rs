@@ -53,11 +53,7 @@ fn current_budget_costs(env: &Env) -> (u64, u64) {
     (budget.cpu_instruction_cost(), budget.memory_bytes_cost())
 }
 
-/// Production fallback for [`current_budget_costs`]: no metering available.
-#[cfg(not(any(test, feature = "testutils")))]
-fn current_budget_costs(_env: &Env) -> (u64, u64) {
-    (0, 0)
-}
+
 
 // Status constants
 pub const STATUS_ACTIVE: u32 = 0;
@@ -218,10 +214,7 @@ fn compute_backfill_commitment(
 fn budget_cpu(env: &Env) -> u64 {
     env.cost_estimate().budget().cpu_instruction_cost()
 }
-#[cfg(not(any(test, feature = "testutils")))]
-fn budget_cpu(_env: &Env) -> u64 {
-    0
-}
+
 
 /// Read the current memory bytes for relayer gas metering.
 ///
@@ -230,10 +223,7 @@ fn budget_cpu(_env: &Env) -> u64 {
 fn budget_mem(env: &Env) -> u64 {
     env.cost_estimate().budget().memory_bytes_cost()
 }
-#[cfg(not(any(test, feature = "testutils")))]
-fn budget_mem(_env: &Env) -> u64 {
-    0
-}
+
 
 #[soroban_sdk::contractclient(name = "AttestorStakingClient")]
 pub trait AttestorStakingContractTrait {
