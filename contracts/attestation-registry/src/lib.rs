@@ -513,3 +513,6 @@ impl AttestationRegistry {
         admin
     }
 }
+
+#[cfg(test)]
+mod upgrade_adversarial_test;
