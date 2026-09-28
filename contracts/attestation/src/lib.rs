@@ -3935,6 +3935,8 @@ mod tier_bounds_test;
 #[cfg(test)]
 mod timelock_fees_test;
 #[cfg(all(test, feature = "full-tests"))]
+#[cfg(test)]
+mod grant_role_by_admin_test;
 mod ttl_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod verify_attestation_test;
