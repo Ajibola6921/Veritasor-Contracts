@@ -3904,6 +3904,11 @@ mod multisig_e2e_test;
 mod multisig_test;
 #[cfg(test)]
 mod pause_test;
+/// Focused tests for `set_paused` in access_control.rs (issue #369).
+/// Covers direct set/read, idempotency, toggle round-trips, persistence,
+/// interaction with `require_not_paused`, and authorization boundary tests.
+#[cfg(test)]
+mod set_paused_test;
 #[cfg(test)]
 mod permit_expiry_test;
 #[cfg(test)]
