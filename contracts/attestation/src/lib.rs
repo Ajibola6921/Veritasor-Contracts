@@ -3870,6 +3870,8 @@ mod compact_archival_test;
 mod dao_override_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dispute_test;
+#[cfg(test)]
+mod dispute_adversarial_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dynamic_fees_test;
 #[cfg(all(test, feature = "full-tests"))]
@@ -3926,6 +3928,8 @@ mod replay_nonce_test;
 mod revocation_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod revoke_reason_test;
+#[cfg(test)]
+mod role_bitmap_adversarial_test;
 #[cfg(test)]
 mod schema_export_test;
 #[cfg(all(test, feature = "full-tests"))]
