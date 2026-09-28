@@ -231,6 +231,9 @@ mod attestation_import {
 
 #[cfg(test)]
 mod test;
+/// Focused adversarial tests for `initialize`.
+#[cfg(test)]
+mod test_initialize;
 
 // ════════════════════════════════════════════════════════════════════
 //  Storage types
