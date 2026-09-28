@@ -3870,6 +3870,9 @@ mod compact_archival_test;
 mod dao_override_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dispute_test;
+/// Focused adversarial tests for `set_dispute_deadline`.
+#[cfg(test)]
+mod test_set_dispute_deadline;
 #[cfg(all(test, feature = "full-tests"))]
 mod dynamic_fees_test;
 #[cfg(all(test, feature = "full-tests"))]
