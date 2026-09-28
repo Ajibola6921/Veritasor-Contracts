@@ -3924,6 +3924,9 @@ mod registry_test;
 mod replay_nonce_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod revocation_test;
+
+#[cfg(test)]
+mod test_get_revoked_periods;
 #[cfg(all(test, feature = "full-tests"))]
 mod revoke_reason_test;
 #[cfg(test)]
