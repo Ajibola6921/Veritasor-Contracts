@@ -3846,6 +3846,8 @@ impl AttestationContract {
 #[cfg(all(test, feature = "full-tests"))]
 mod access_control_test;
 #[cfg(all(test, feature = "full-tests"))]
+mod access_control_swap_admin_test;
+#[cfg(all(test, feature = "full-tests"))]
 mod anomaly_test;
 #[cfg(test)]
 mod attestor_lock_test;
