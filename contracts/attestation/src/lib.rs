@@ -3868,6 +3868,8 @@ mod cleanup_metrics_test;
 mod compact_archival_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dao_override_test;
+#[cfg(test)]
+mod get_dispute_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dispute_test;
 #[cfg(all(test, feature = "full-tests"))]
