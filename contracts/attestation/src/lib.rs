@@ -3843,6 +3843,8 @@ impl AttestationContract {
 // ── Test Modules ──
 // Issue #369 tests always run. Enable `full-tests` for the legacy attestation suite
 // (some modules need updates on this branch before they compile).
+#[cfg(test)]
+mod access_control_emergency_pause_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod access_control_test;
 #[cfg(all(test, feature = "full-tests"))]
