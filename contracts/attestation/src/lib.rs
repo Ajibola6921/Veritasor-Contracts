@@ -3841,6 +3841,11 @@ mod access_control_emergency_pause_test;
 #[cfg(test)]
 mod is_paused_test;
 mod access_control_test;
+/// Focused adversarial coverage for `access_control::admin_count` (issue #886):
+/// derivation from `ROLE_ADMIN` holders, distinct-admin counting, rejected
+/// operations, and the `MIN_ADMIN_COUNT` / cooldown guard ordering.
+#[cfg(test)]
+mod admin_count_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod access_control_swap_admin_test;
 #[cfg(all(test, feature = "full-tests"))]
