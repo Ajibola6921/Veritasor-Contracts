@@ -44,6 +44,38 @@ fn rollback_without_previous_target_preserves_all_state() {
 }
 
 #[test]
+fn rollback_with_incomplete_previous_metadata_preserves_all_state() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let registry_id = env.register(AttestationRegistry, ());
+    let client = AttestationRegistryClient::new(&env, &registry_id);
+    let admin = Address::generate(&env);
+    let impl_v1 = Address::generate(&env);
+    let impl_v2 = Address::generate(&env);
+    client.initialize(&admin, &impl_v1, &1u32);
+    client.upgrade(&impl_v2, &2u32, &None);
+
+    env.as_contract(&registry_id, || {
+        env.storage().instance().remove(&DataKey::PreviousVersion);
+    });
+    let missing_version = snapshot(&client);
+    assert!(client.try_rollback().is_err());
+    assert_eq!(snapshot(&client), missing_version);
+
+    env.as_contract(&registry_id, || {
+        env.storage()
+            .instance()
+            .set(&DataKey::PreviousVersion, &1u32);
+        env.storage()
+            .instance()
+            .remove(&DataKey::PreviousImplementation);
+    });
+    let missing_implementation = snapshot(&client);
+    assert!(client.try_rollback().is_err());
+    assert_eq!(snapshot(&client), missing_implementation);
+}
+
+#[test]
 fn rollback_before_initialization_preserves_empty_state() {
     let env = Env::default();
     env.mock_all_auths();
