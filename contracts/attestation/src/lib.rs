@@ -3931,6 +3931,9 @@ mod replay_nonce_test;
 mod require_operator_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod revocation_test;
+
+#[cfg(test)]
+mod test_get_revoked_periods;
 #[cfg(all(test, feature = "full-tests"))]
 mod revoke_reason_test;
 #[cfg(test)]
