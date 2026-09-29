@@ -764,3 +764,61 @@ fn test_admin_removal_succeeds_at_cooldown_boundary() {
 
     assert!(!client.has_role(&second, &ROLE_ADMIN));
 }
+
+// ════════════════════════════════════════════════════════════════════
+//  Weighted Admin Quorum (Issue #893)
+// ════════════════════════════════════════════════════════════════════
+
+#[test]
+fn test_admin_quorum_weight_uses_default_and_explicit_weights() {
+    let (env, client, admin) = setup();
+    let second_admin = Address::generate(&env);
+    client.grant_role(&admin, &second_admin, &ROLE_ADMIN);
+
+    // Existing and newly granted admins without configured weights count as 1.
+    assert_eq!(client.get_admin_quorum_weight(), 2);
+
+    client.set_admin_weight(&admin, &second_admin, &17);
+    assert_eq!(client.get_admin_quorum_weight(), 18);
+}
+
+#[test]
+fn test_admin_quorum_weight_includes_maximum_weight_without_overflow() {
+    let (env, client, admin) = setup();
+    let second_admin = Address::generate(&env);
+    client.grant_role(&admin, &second_admin, &ROLE_ADMIN);
+
+    client.set_admin_weight(&admin, &admin, &access_control::MAX_ADMIN_WEIGHT);
+    client.set_admin_weight(&admin, &second_admin, &access_control::MAX_ADMIN_WEIGHT);
+
+    assert_eq!(
+        client.get_admin_quorum_weight(),
+        (2 * access_control::MAX_ADMIN_WEIGHT) as u64
+    );
+}
+
+#[test]
+fn test_admin_quorum_weight_ignores_non_admin_and_removed_admin_weights() {
+    let (env, client, admin) = setup();
+    let former_admin = Address::generate(&env);
+    let non_admin = Address::generate(&env);
+    client.grant_role(&admin, &former_admin, &ROLE_ADMIN);
+    client.grant_role(&admin, &non_admin, &ROLE_ATTESTOR);
+    client.set_admin_weight(&admin, &former_admin, &23);
+
+    // Store a weight for a non-admin through the internal helper to exercise
+    // the quorum function's role filter independently of setter validation.
+    in_contract(&env, &client.address, |e| {
+        e.storage().instance().set(
+            &access_control::AccessControlKey::AdminWeight(non_admin.clone()),
+            &access_control::MAX_ADMIN_WEIGHT,
+        );
+        assert_eq!(access_control::admin_quorum_weight(e), 24);
+
+        // Simulate a role removal while the old weight entry remains stored.
+        access_control::set_roles(e, &former_admin, ROLE_ATTESTOR);
+        assert_eq!(access_control::get_admin_weight(e, &former_admin), 23);
+        assert_eq!(access_control::admin_quorum_weight(e), 1);
+    });
+    assert_eq!(client.get_admin_quorum_weight(), 1);
+}
