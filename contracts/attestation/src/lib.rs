@@ -3852,6 +3852,8 @@ mod access_control_swap_admin_test;
 mod anomaly_test;
 #[cfg(test)]
 mod attestor_lock_test;
+#[cfg(test)]
+mod attestor_lock_adversarial_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod attestor_staking_integration_test;
 #[cfg(test)]
