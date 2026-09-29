@@ -231,6 +231,12 @@ mod attestation_import {
 
 #[cfg(test)]
 mod test;
+/// Focused adversarial tests for `initialize`.
+#[cfg(test)]
+mod test_initialize;
+
+#[cfg(test)]
+mod last_restore_id_test;
 
 // ════════════════════════════════════════════════════════════════════
 //  Storage types
@@ -1635,3 +1641,9 @@ mod get_pending_restore_adversarial_tests {
         assert_eq!(still_armed.expires_at_ledger, armed.expires_at_ledger);
     }
 }
+
+#[cfg(test)]
+mod finalize_epoch_test;
+
+#[cfg(test)]
+mod restore_commit_adversarial_test;

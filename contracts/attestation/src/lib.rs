@@ -8,8 +8,8 @@ extern crate std;
 
 use core::cmp::Ordering;
 use soroban_sdk::{
-    contract, contractimpl, contracttype, signature, token, Address, BytesN, Env, Signature,
-    String, Symbol, TryIntoVal, Vec,
+    contract, contractimpl, contracttype, token, Address, BytesN, Env, IntoVal, String, Symbol,
+    TryIntoVal, Vec,
 };
 
 use veritasor_common::merkle;
@@ -53,7 +53,6 @@ fn current_budget_costs(env: &Env) -> (u64, u64) {
     (budget.cpu_instruction_cost(), budget.memory_bytes_cost())
 }
 
-/// Production fallback for [`current_budget_costs`]: no metering available.
 #[cfg(not(any(test, feature = "testutils")))]
 fn current_budget_costs(_env: &Env) -> (u64, u64) {
     (0, 0)
@@ -93,7 +92,10 @@ pub use access_control::{ROLE_ADMIN, ROLE_ATTESTOR, ROLE_BUSINESS, ROLE_OPERATOR
 pub use dispute::{
     Dispute, DisputeOutcome, DisputeResolution, DisputeStatus, DisputeType, OptionalResolution,
 };
-pub use dynamic_fees::{add_relayer_gas, compute_fee, get_relayer_gas, DataKey, FeeConfig};
+pub use dynamic_fees::{
+    add_relayer_gas, compute_fee, get_relayer_gas, DataKey, FeeConfig, PendingFeeConfig,
+    FEE_TIMELOCK_SECONDS,
+};
 pub use dynamic_fees::{ArchivePointerRecord, CompactionRetentionPolicy};
 pub use dynamic_fees::{RevokeProposal, DEFAULT_REVOKE_GRACE_SECONDS};
 pub use events::{
@@ -218,10 +220,6 @@ fn compute_backfill_commitment(
 fn budget_cpu(env: &Env) -> u64 {
     env.cost_estimate().budget().cpu_instruction_cost()
 }
-#[cfg(not(any(test, feature = "testutils")))]
-fn budget_cpu(_env: &Env) -> u64 {
-    0
-}
 
 /// Read the current memory bytes for relayer gas metering.
 ///
@@ -229,10 +227,6 @@ fn budget_cpu(_env: &Env) -> u64 {
 #[cfg(any(test, feature = "testutils"))]
 fn budget_mem(env: &Env) -> u64 {
     env.cost_estimate().budget().memory_bytes_cost()
-}
-#[cfg(not(any(test, feature = "testutils")))]
-fn budget_mem(_env: &Env) -> u64 {
-    0
 }
 
 #[soroban_sdk::contractclient(name = "AttestorStakingClient")]
@@ -1807,10 +1801,7 @@ impl AttestationContract {
     }
 
     /// Cleanup orphaned revocation index entries for a business.
-    pub fn cleanup_revocation_index(
-        env: Env,
-        business: Address,
-    ) -> Result<u32, soroban_sdk::Error> {
+    pub fn cleanup_revocation_index(env: Env, business: Address) -> u32 {
         let mut periods = dispute::get_revoked_periods(&env, &business);
         if periods.is_empty() {
             return 0;
@@ -1862,6 +1853,7 @@ impl AttestationContract {
     ) -> AttestationStatusResult {
         let mut result = Vec::new(&env);
         for period in periods.iter() {
+            let mut found = false;
             // Active tier lives in instance storage (see `execute_submission`).
             let active_key = DataKey::Attestation(business.clone(), period.clone());
             if let Some(att_data) = env
@@ -1877,7 +1869,7 @@ impl AttestationContract {
                 );
                 result.push_back((
                     period.clone(),
-                    att_data.clone(),
+                    Some(att_data.clone()),
                     Self::get_revocation_info(env.clone(), business.clone(), period.clone()),
                 ));
                 found = true;
@@ -1912,7 +1904,7 @@ impl AttestationContract {
 
                     result.push_back((
                         period.clone(),
-                        archived_att_data,
+                        Some(archived_att_data),
                         Self::get_revocation_info(env.clone(), business.clone(), period.clone()),
                     ));
                 }
@@ -2147,12 +2139,12 @@ impl AttestationContract {
     pub fn emergency_pause(
         env: Env,
         caller: Address,
-        sig1: Signature,
-        sig2: Signature,
+        signer1: Address,
+        signer2: Address,
         nonce: u64,
     ) {
-        let admin = access_control::require_admin(&env, &caller);
-        replay_protection::verify_and_increment_nonce(&env, &admin, NONCE_CHANNEL_ADMIN, nonce);
+        access_control::require_admin(&env, &caller);
+        replay_protection::verify_and_increment_nonce(&env, &caller, NONCE_CHANNEL_ADMIN, nonce);
         multisig::emergency_pause(&env, &signer1, &signer2);
     }
 
@@ -3843,12 +3835,25 @@ impl AttestationContract {
 // ── Test Modules ──
 // Issue #369 tests always run. Enable `full-tests` for the legacy attestation suite
 // (some modules need updates on this branch before they compile).
+#[cfg(test)]
+mod access_control_emergency_pause_test;
 #[cfg(all(test, feature = "full-tests"))]
+#[cfg(test)]
+mod is_paused_test;
 mod access_control_test;
+/// Focused adversarial coverage for `access_control::admin_count` (issue #886):
+/// derivation from `ROLE_ADMIN` holders, distinct-admin counting, rejected
+/// operations, and the `MIN_ADMIN_COUNT` / cooldown guard ordering.
+#[cfg(test)]
+mod admin_count_test;
+#[cfg(all(test, feature = "full-tests"))]
+mod access_control_swap_admin_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod anomaly_test;
 #[cfg(test)]
 mod attestor_lock_test;
+#[cfg(test)]
+mod attestor_lock_adversarial_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod attestor_staking_integration_test;
 #[cfg(test)]
@@ -3866,10 +3871,18 @@ mod cleanup_expired_attestation_test;
 mod cleanup_metrics_test;
 #[cfg(test)]
 mod compact_archival_test;
+/// Focused adversarial coverage for `dispute::add_dispute_to_attestation_index`
+/// (issue #917). Runs in the default test profile.
+#[cfg(test)]
+mod dispute_attestation_index_adversarial_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dao_override_test;
+#[cfg(test)]
+mod get_dispute_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dispute_test;
+#[cfg(test)]
+mod dispute_adversarial_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dynamic_fees_test;
 #[cfg(all(test, feature = "full-tests"))]
@@ -3904,6 +3917,11 @@ mod multisig_e2e_test;
 mod multisig_test;
 #[cfg(test)]
 mod pause_test;
+/// Focused tests for `set_paused` in access_control.rs (issue #369).
+/// Covers direct set/read, idempotency, toggle round-trips, persistence,
+/// interaction with `require_not_paused`, and authorization boundary tests.
+#[cfg(test)]
+mod set_paused_test;
 #[cfg(test)]
 mod permit_expiry_test;
 #[cfg(test)]
@@ -3922,10 +3940,19 @@ mod rate_limit_test;
 mod registry_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod replay_nonce_test;
+/// Focused tests for `access_control::require_operator` (closes issue #require-operator).
+/// Runs under the default test profile — no feature flag required.
+#[cfg(test)]
+mod require_operator_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod revocation_test;
+
+#[cfg(test)]
+mod test_get_revoked_periods;
 #[cfg(all(test, feature = "full-tests"))]
 mod revoke_reason_test;
+#[cfg(test)]
+mod role_bitmap_adversarial_test;
 #[cfg(test)]
 mod schema_export_test;
 #[cfg(all(test, feature = "full-tests"))]
@@ -3933,8 +3960,12 @@ mod test;
 #[cfg(all(test, feature = "full-tests"))]
 mod tier_bounds_test;
 #[cfg(test)]
+mod revoke_grace_test;
+#[cfg(test)]
 mod timelock_fees_test;
 #[cfg(all(test, feature = "full-tests"))]
+#[cfg(test)]
+mod grant_role_by_admin_test;
 mod ttl_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod verify_attestation_test;
@@ -4322,3 +4353,7 @@ mod relayer_gas_attribution_test {
         );
     }
 }
+
+/// Adversarial tests for `dispute::has_existing_dispute` (issue #927).
+#[cfg(test)]
+mod has_existing_dispute_test;
