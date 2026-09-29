@@ -3842,6 +3842,8 @@ mod access_control_emergency_pause_test;
 mod is_paused_test;
 mod access_control_test;
 #[cfg(all(test, feature = "full-tests"))]
+mod access_control_swap_admin_test;
+#[cfg(all(test, feature = "full-tests"))]
 mod anomaly_test;
 #[cfg(test)]
 mod attestor_lock_test;
