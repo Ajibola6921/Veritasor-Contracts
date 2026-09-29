@@ -2,7 +2,7 @@ use crate::dispute;
 use crate::RevocationData;
 use soroban_sdk::testutils::Address as _;
 use soroban_sdk::testutils::Ledger as _;
-use soroban_sdk:{Address, Env, String};
+use soroban_sdk::{Address, Env, String};
 
 fn setup() -> (Env, Address) {
     let env = Env::default();
@@ -32,7 +32,7 @@ fn check_and_rollback_disputes_empty_ids_is_no_op() {
 
 let (env, contract) = setup();
 
-let dispute_ids = soroban_sdk:Vec::new(&env);
+let dispute_ids = soroban_sdk::Vec::new(&env);
 
 
 let result = in_contract(&env, &contract, |env| {
@@ -56,7 +56,7 @@ fn check_and_rollback_disputes_respects_limit_and_reports_count() {
 
 let (env, contract) = setup();
 
-let dispute_ids = soroban_sdk:Vec::from_array(&env, [1, 2, 3]);
+let dispute_ids = soroban_sdk::Vec::from_array(&env, [1, 2, 3]);
 
 
 let result = in_contract(&env, &contract, |env| {
@@ -80,9 +80,9 @@ fn check_and_rollback_disputes_limit_greater_than_length_is_clamped() {
 
 let (env, contract) = setup();
 
-let dispute_ids = soroban_sdk:Vec::from_array(&env, [10, 20]);
+let dispute_ids = soroban_sdk::Vec::from_array(&env, [10, 20]);
 
-let result = in_contract(&\nenv, &contract, |env| {
+let result = in_contract(&env, &contract, |env| {
 
 dispute::check_and_rollback_disputes(env, &dispute_ids, u32::MAX)
 
@@ -134,7 +134,7 @@ dispute::check_and_rollback_disputes(env, &dispute_ids, 3)
 
 });
 
-let second = in_contract(&env, &contract, |en| {
+let second = in_contract(&env, &contract, |env| {
 
 dispute::check_and_rollback_disputes(env, &dispute_ids, 3)
 
@@ -163,9 +163,9 @@ dispute::record_revocation(env, &business, &period, &revocation)
 
 });
 
-let dispute_ids = soroban_sdk:Vec::from_array(&env, [1, 2, 3]);
+let dispute_ids = soroban_sdk::Vec::from_array(&env, [1, 2, 3]);
 
-let result = in_contract(&env, &contract, |en| {
+let result = in_contract(&env, &contract, |env| {
 
 dispute::check_and_rollback_disputes(env, &dispute_ids, 2)
 
@@ -195,7 +195,7 @@ let period = String::from_str(&env, "2026-09");
 
 let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
 
-in_contract(&env, &contract, |en| {
+in_contract(&env, &contract, |env| {
 
 dispute::require_not_revoked_for_update(env, &business, &period);
 
