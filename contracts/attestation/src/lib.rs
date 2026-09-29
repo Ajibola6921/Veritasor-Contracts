@@ -3837,8 +3837,8 @@ impl AttestationContract {
 #[cfg(test)]
 mod access_control_emergency_pause_test;
 #[cfg(all(test, feature = "full-tests"))]
-#[cfg(test)]
-mod is_paused_test;
+mod access_control_swap_admin_test;
+#[cfg(all(test, feature = "full-tests"))]
 mod access_control_test;
 /// Focused adversarial coverage for `access_control::admin_count` (issue #886):
 /// derivation from `ROLE_ADMIN` holders, distinct-admin counting, rejected
@@ -3846,13 +3846,11 @@ mod access_control_test;
 #[cfg(test)]
 mod admin_count_test;
 #[cfg(all(test, feature = "full-tests"))]
-mod access_control_swap_admin_test;
-#[cfg(all(test, feature = "full-tests"))]
 mod anomaly_test;
 #[cfg(test)]
-mod attestor_lock_test;
-#[cfg(test)]
 mod attestor_lock_adversarial_test;
+#[cfg(test)]
+mod attestor_lock_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod attestor_staking_integration_test;
 #[cfg(test)]
@@ -3870,18 +3868,16 @@ mod cleanup_expired_attestation_test;
 mod cleanup_metrics_test;
 #[cfg(test)]
 mod compact_archival_test;
+#[cfg(all(test, feature = "full-tests"))]
+mod dao_override_test;
+#[cfg(test)]
+mod dispute_adversarial_test;
 /// Focused adversarial coverage for `dispute::add_dispute_to_attestation_index`
 /// (issue #917). Runs in the default test profile.
 #[cfg(test)]
 mod dispute_attestation_index_adversarial_test;
 #[cfg(all(test, feature = "full-tests"))]
-mod dao_override_test;
-#[cfg(test)]
-mod get_dispute_test;
-#[cfg(all(test, feature = "full-tests"))]
 mod dispute_test;
-#[cfg(test)]
-mod dispute_adversarial_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dynamic_fees_test;
 #[cfg(all(test, feature = "full-tests"))]
@@ -3906,6 +3902,11 @@ mod fuzz_create_proposal_test;
 mod fuzz_volume_brackets_test;
 #[cfg(test)]
 mod gas_benchmark_test;
+#[cfg(test)]
+mod get_dispute_test;
+#[cfg(all(test, feature = "full-tests"))]
+#[cfg(test)]
+mod is_paused_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod key_rotation_test;
 #[cfg(test)]
@@ -3916,11 +3917,6 @@ mod multisig_e2e_test;
 mod multisig_test;
 #[cfg(test)]
 mod pause_test;
-/// Focused tests for `set_paused` in access_control.rs (issue #369).
-/// Covers direct set/read, idempotency, toggle round-trips, persistence,
-/// interaction with `require_not_paused`, and authorization boundary tests.
-#[cfg(test)]
-mod set_paused_test;
 #[cfg(test)]
 mod permit_expiry_test;
 #[cfg(test)]
@@ -3945,9 +3941,17 @@ mod replay_nonce_test;
 mod require_operator_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod revocation_test;
-
+/// Focused tests for `set_paused` in access_control.rs (issue #369).
+/// Covers direct set/read, idempotency, toggle round-trips, persistence,
+/// interaction with `require_not_paused`, and authorization boundary tests.
 #[cfg(test)]
-mod test_get_revoked_periods;
+mod set_paused_test;
+
+#[cfg(all(test, feature = "full-tests"))]
+#[cfg(test)]
+mod grant_role_by_admin_test;
+#[cfg(test)]
+mod revoke_grace_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod revoke_reason_test;
 #[cfg(test)]
@@ -3956,15 +3960,13 @@ mod role_bitmap_adversarial_test;
 mod schema_export_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod test;
+#[cfg(test)]
+mod test_get_revoked_periods;
 #[cfg(all(test, feature = "full-tests"))]
 mod tier_bounds_test;
 #[cfg(test)]
-mod revoke_grace_test;
-#[cfg(test)]
 mod timelock_fees_test;
 #[cfg(all(test, feature = "full-tests"))]
-#[cfg(test)]
-mod grant_role_by_admin_test;
 mod ttl_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod verify_attestation_test;
