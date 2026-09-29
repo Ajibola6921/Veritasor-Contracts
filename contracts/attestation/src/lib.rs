@@ -3871,6 +3871,10 @@ mod cleanup_expired_attestation_test;
 mod cleanup_metrics_test;
 #[cfg(test)]
 mod compact_archival_test;
+/// Focused adversarial coverage for `dispute::add_dispute_to_attestation_index`
+/// (issue #917). Runs in the default test profile.
+#[cfg(test)]
+mod dispute_attestation_index_adversarial_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod dao_override_test;
 #[cfg(test)]
