@@ -4358,3 +4358,7 @@ mod relayer_gas_attribution_test {
 /// Adversarial tests for `dispute::has_existing_dispute` (issue #927).
 #[cfg(test)]
 mod has_existing_dispute_test;
+
+/// Adversarial tests for `dispute::has_open_dispute` (issue #932).
+#[cfg(test)]
+mod has_open_dispute_test;
