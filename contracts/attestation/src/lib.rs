@@ -3940,6 +3940,8 @@ mod test;
 #[cfg(all(test, feature = "full-tests"))]
 mod tier_bounds_test;
 #[cfg(test)]
+mod revoke_grace_test;
+#[cfg(test)]
 mod timelock_fees_test;
 #[cfg(all(test, feature = "full-tests"))]
 mod ttl_test;
