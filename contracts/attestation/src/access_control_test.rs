@@ -199,6 +199,20 @@ fn test_revoke_one_role_keeps_others() {
 }
 
 #[test]
+fn test_get_role_holders_returns_empty_when_uninitialized() {
+    let env = Env::default();
+    let contract = env.register(AttestationContract, ());
+
+    let holders = in_contract(&env, &contract, access_control::get_role_holders);
+
+    assert_eq!(holders.len(), 0);
+    assert_eq!(
+        in_contract(&env, &contract, access_control::get_role_holders).len(),
+        0
+    );
+}
+
+#[test]
 fn test_get_role_holders() {
     let (env, client, admin) = setup();
     let user1 = Address::generate(&env);
@@ -210,8 +224,34 @@ fn test_get_role_holders() {
     let holders = in_contract(&env, &client.address, |e| {
         access_control::get_role_holders(e)
     });
-    // Admin + 2 users
+
+    // Enumeration retains insertion order and returns each active holder once.
     assert_eq!(holders.len(), 3);
+    assert_eq!(holders.get(0), Some(admin.clone()));
+    assert_eq!(holders.get(1), Some(user1.clone()));
+    assert_eq!(holders.get(2), Some(user2.clone()));
+
+    let repeated_holders = in_contract(&env, &client.address, |e| {
+        access_control::get_role_holders(e)
+    });
+    assert_eq!(repeated_holders.len(), holders.len());
+    for index in 0..holders.len() {
+        assert_eq!(repeated_holders.get(index), holders.get(index));
+    }
+
+    // Reading the list does not alter the associated role state or enumeration.
+    assert_eq!(
+        in_contract(&env, &client.address, |e| access_control::get_roles(e, &admin)),
+        ROLE_ADMIN
+    );
+    assert_eq!(
+        in_contract(&env, &client.address, |e| access_control::get_roles(e, &user1)),
+        ROLE_ATTESTOR
+    );
+    assert_eq!(
+        in_contract(&env, &client.address, |e| access_control::get_roles(e, &user2)),
+        ROLE_BUSINESS
+    );
 }
 
 #[test]
